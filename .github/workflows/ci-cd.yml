@@ -20,11 +20,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-      - run: |
+      
+      - name: Install Dependencies and Run Tests
+        # Combine installation and testing for better dependency management
+        run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - run: python -m compileall .
-      - run: pytest --maxfail=1 -q
+          
+          # FIX: Set the PYTHONPATH to include the current directory (project root)
+          # This allows Python to find 'app' when 'from app import app' is run.
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          
+          # Optional: Compile all Python files (Kept for completeness but not strictly needed)
+          python -m compileall .
+          
+          # Run tests
+          pytest --maxfail=1 -q
 
   build-and-push-image:
     needs: build-test
