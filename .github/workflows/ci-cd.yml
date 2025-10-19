@@ -22,20 +22,18 @@ jobs:
           python-version: "3.10"
       
       - name: Install Dependencies and Run Tests
-        # Combine installation and testing for better dependency management
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-          # FIX: Set the PYTHONPATH to include the current directory (project root)
-          # This allows Python to find 'app' when 'from app import app' is run.
+          # FIX from previous issue: Set the PYTHONPATH for local module import
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           
-          # Optional: Compile all Python files (Kept for completeness but not strictly needed)
           python -m compileall .
           
-          # Run tests
           pytest --maxfail=1 -q
+
+---
 
   build-and-push-image:
     needs: build-test
@@ -44,13 +42,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        
       - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:v${{ github.run_number }}
+          # FIX for current issue: Convert repository owner and name to lowercase for GHCR
+          OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+          REPO_LOWER=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
+          
+          IMAGE=ghcr.io/$OWNER_LOWER/$REPO_LOWER:v${{ github.run_number }}
+          
           docker build -t $IMAGE .
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          
       - run: docker push $IMAGE
       - run: echo "Pushed $IMAGE"
+
+---
 
   deploy-render:
     needs: build-and-push-image
