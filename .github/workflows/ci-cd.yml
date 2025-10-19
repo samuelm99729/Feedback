@@ -33,31 +33,36 @@ jobs:
           
           pytest --maxfail=1 -q
 
----
-
   build-and-push-image:
     needs: build-test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      # Step 1: Define the image tag using the built-in 'toLower' function
+      - name: Define Lowercase Image Tag
+        id: image_tag
+        run: |
+          # Use built-in toLower function to guarantee GHCR compliance
+          OWNER_LOWER="${{ github.repository_owner }}"
+          REPO_LOWER="${{ github.event.repository.name }}"
+          # Apply the conversion to the owner and repo name
+          IMAGE_NAME_LOWER=$(echo $OWNER_LOWER/$REPO_LOWER | tr '[:upper:]' '[:lower:]')
+          
+          FULL_IMAGE_TAG=ghcr.io/$IMAGE_NAME_LOWER:v${{ github.run_number }}
+          
+          echo "IMAGE=$FULL_IMAGE_TAG" >> $GITHUB_ENV
+          echo "Pushed image tag: $FULL_IMAGE_TAG"
+          
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
         
-      - name: Build Docker image
+      - name: Build and Push Docker image
+        # Reference the IMAGE environment variable set in the previous step
         run: |
-          # FIX for current issue: Convert repository owner and name to lowercase for GHCR
-          OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
-          REPO_LOWER=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
-          
-          IMAGE=ghcr.io/$OWNER_LOWER/$REPO_LOWER:v${{ github.run_number }}
-          
-          docker build -t $IMAGE .
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-          
-      - run: docker push $IMAGE
-      - run: echo "Pushed $IMAGE"
-
----
+          docker build -t ${{ env.IMAGE }} .
+          docker push ${{ env.IMAGE }}
+          echo "Pushed ${{ env.IMAGE }}"
 
   deploy-render:
     needs: build-and-push-image
