@@ -30,5 +30,10 @@ def submit_feedback():
 def view_feedbacks():
     return render_template('feedbacks.html', feedbacks=feedback_list)
 
+@app.route('/health')
+def health_check():
+    return {"status": "OK", "message": "Feedback app is running smoothly!"}
+
+
 if __name__ == '__main__':
     app.run(debug=True)
