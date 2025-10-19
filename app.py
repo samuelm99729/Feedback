@@ -34,6 +34,10 @@ def view_feedbacks():
 def health_check():
     return {"status": "OK", "message": "Feedback app is running smoothly!"}
 
+"""
+    Returns a simple JSON status to indicate the application is running.
+    This route is tested by tests/test_health.py.
+    """
 
 if __name__ == '__main__':
     app.run(debug=True)
