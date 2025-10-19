@@ -36,7 +36,7 @@ def health_check():
 
 """
     Returns a simple JSON status to indicate the application is running.
-    This route is tested by tests/test_health.py.
+    This route is tested by tests/test_health.py. hi
     """
 
 if __name__ == '__main__':
